@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProveX Position Size Calculator</title>
+<style>
+  :root{
+    --bg:#0b0d10;
+    --panel:#14171c;
+    --border:#242830;
+    --text:#e7e9ec;
+    --muted:#8a8f98;
+    --accent:#4f8cff;
+    --green:#3ecf8e;
+    --red:#f0616d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:32px 16px;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+  }
+  h1{
+    font-size:20px;
+    font-weight:600;
+    margin:0 0 4px 0;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:24px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  @media (max-width:560px){
+    .grid{grid-template-columns:1fr;}
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--muted);
+    margin:0 0 14px 0;
+    font-weight:600;
+  }
+  label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:5px;
+  }
+  .field{
+    margin-bottom:14px;
+  }
+  input[type=number]{
+    width:100%;
+    background:#0e1114;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:15px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  input[type=number]:focus{
+    border-color:var(--accent);
+  }
+  .warn-note{
+    font-size:12px;
+    color:var(--muted);
+    background:#1b1508;
+    border:1px solid #3a2c0d;
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:16px;
+    line-height:1.5;
+  }
+  .results{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  @media (max-width:560px){
+    .results{grid-template-columns:1fr;}
+  }
+  .result-item{
+    background:#0e1114;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .result-item .rlabel{
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .result-item .rvalue{
+    font-size:17px;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  .result-item.highlight{
+    border-color:var(--accent);
+  }
+  .rvalue.pos{color:var(--green);}
+  .rvalue.neg{color:var(--red);}
+  .section-label{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    margin:18px 0 8px 0;
+  }
+  .section-label:first-child{margin-top:0;}
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:11px;
+    margin-top:20px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ProveX Position Size Calculator</h1>
+  <div class="sub">Auto-calculates position size, risk, and net P/L based on your trade parameters.</div>
+
+  <div class="card">
+    <h2>Trade Inputs</h2>
+    <div class="warn-note">
+      Take note daily drawdown is typically 5% of the account — in a $2000 account that's $100, so don't risk more than that. Fees (funding, taker, or maker) will also be deducted once you close a position.
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="entry">Entry Price</label>
+        <input type="number" id="entry" step="any" value="0">
+      </div>
+      <div class="field">
+        <label for="target">Target Price</label>
+        <input type="number" id="target" step="any" value="0">
+      </div>
+      <div class="field">
+        <label for="stop">Stop Loss</label>
+        <input type="number" id="stop" step="any" value="0">
+      </div>
+      <div class="field">
+        <label for="equity">Equity</label>
+        <input type="number" id="equity" step="any" value="0">
+      </div>
+      <div class="field">
+        <label for="leverage">Leverage</label>
+        <input type="number" id="leverage" step="any" value="10">
+      </div>
+      <div class="field">
+        <label for="risk">Risk (USDT)</label>
+        <input type="number" id="risk" step="any" value="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Results</h2>
+
+    <div class="section-label">Position</div>
+    <div class="results">
+      <div class="result-item highlight">
+        <div class="rlabel">Position Size</div>
+        <div class="rvalue" id="out-positionSize">–</div>
+      </div>
+      <div class="result-item">
+        <div class="rlabel">Notional Value</div>
+        <div class="rvalue" id="out-notional">–</div>
+      </div>
+      <div class="result-item">
+        <div class="rlabel">Margin</div>
+        <div class="rvalue" id="out-margin">–</div>
+      </div>
+      <div class="result-item">
+        <div class="rlabel">Stop Distance</div>
+        <div class="rvalue" id="out-stopDist">–</div>
+      </div>
+      <div class="result-item">
+        <div class="rlabel">Target Distance</div>
+        <div class="rvalue" id="out-targetDist">–</div>
+      </div>
+      <div class="result-item">
+        <div class="rlabel">Target Gain (USDT)</div>
+        <div class="rvalue" id="out-targetGain">–</div>
+      </div>
+    </div>
+
+    <div class="section-label">Fees</div>
+    <div class="results">
+      <div class="result-item">
+        <div class="rlabel">Maker Fee (per side)</div>
+        <div class="rvalue" id="out-makerFee">–</div>
+      </div>
+      <div class="result-item">
+        <div class="rlabel">Taker Fee (per side)</div>
+        <div class="rvalue" id="out-takerFee">–</div>
+      </div>
+    </div>
+
+    <div class="section-label">If Opened &amp; Closed via Market</div>
+    <div class="results">
+      <div class="result-item">
+        <div class="rlabel">Net Profit (Market)</div>
+        <div class="rvalue" id="out-netProfitMarket">–</div>
+      </div>
+      <div class="result-item">
+        <div class="rlabel">Net Risk (Market)</div>
+        <div class="rvalue" id="out-netRiskMarket">–</div>
+      </div>
+    </div>
+
+    <div class="section-label">If Opened &amp; Closed via Limit</div>
+    <div class="results">
+      <div class="result-item">
+        <div class="rlabel">Net Profit (Limit)</div>
+        <div class="rvalue" id="out-netProfitLimit">–</div>
+      </div>
+      <div class="result-item">
+        <div class="rlabel">Net Risk (Limit)</div>
+        <div class="rvalue" id="out-netRiskLimit">–</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Mirrors the ProveX V3 position size sheet logic — all calculations run locally in your browser.</footer>
+</div>
+
+<script>
+function fmt(n, decimals){
+  if(!isFinite(n)) return '–';
+  return n.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+}
+
+function calc(){
+  const entry = parseFloat(document.getElementById('entry').value) || 0;
+  const target = parseFloat(document.getElementById('target').value) || 0;
+  const stop = parseFloat(document.getElementById('stop').value) || 0;
+  const leverage = parseFloat(document.getElementById('leverage').value) || 0;
+  const risk = parseFloat(document.getElementById('risk').value) || 0;
+
+  const stopDist = Math.abs(entry - stop);
+  const targetDist = Math.abs(entry - target);
+
+  const positionSize = stopDist !== 0 ? risk / stopDist : 0;
+  const notional = positionSize * entry;
+  const targetGain = positionSize * targetDist;
+  const makerFee = notional * 0.0002;
+  const takerFee = notional * 0.0005;
+
+  const netProfitMarket = targetGain - (takerFee * 2);
+  const netRiskMarket = (stopDist * positionSize) + (takerFee * 2);
+  const netProfitLimit = targetGain - (makerFee * 2);
+  const netRiskLimit = (stopDist * positionSize) + (makerFee * 2);
+  const margin = leverage !== 0 ? notional / leverage : 0;
+
+  document.getElementById('out-positionSize').textContent = fmt(positionSize, 6);
+  document.getElementById('out-notional').textContent = '$' + fmt(notional, 2);
+  document.getElementById('out-margin').textContent = '$' + fmt(margin, 2);
+  document.getElementById('out-stopDist').textContent = fmt(stopDist, 6);
+  document.getElementById('out-targetDist').textContent = fmt(targetDist, 6);
+  document.getElementById('out-targetGain').textContent = '$' + fmt(targetGain, 2);
+  document.getElementById('out-makerFee').textContent = '$' + fmt(makerFee, 4);
+  document.getElementById('out-takerFee').textContent = '$' + fmt(takerFee, 4);
+
+  const npm = document.getElementById('out-netProfitMarket');
+  npm.textContent = '$' + fmt(netProfitMarket, 2);
+  npm.className = 'rvalue ' + (netProfitMarket >= 0 ? 'pos' : 'neg');
+
+  const nrm = document.getElementById('out-netRiskMarket');
+  nrm.textContent = '$' + fmt(netRiskMarket, 2);
+  nrm.className = 'rvalue neg';
+
+  const npl = document.getElementById('out-netProfitLimit');
+  npl.textContent = '$' + fmt(netProfitLimit, 2);
+  npl.className = 'rvalue ' + (netProfitLimit >= 0 ? 'pos' : 'neg');
+
+  const nrl = document.getElementById('out-netRiskLimit');
+  nrl.textContent = '$' + fmt(netRiskLimit, 2);
+  nrl.className = 'rvalue neg';
+}
+
+document.querySelectorAll('input').forEach(el => el.addEventListener('input', calc));
+calc();
+</script>
+</body>
+</html>
